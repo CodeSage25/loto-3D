@@ -88,7 +88,12 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
     [playPloop, wait],
   );
 
-  // ✅ Téléportation directe vers le canal droit → boîte
+  // ✅ Téléportation à l'entrée exacte du CanalRight → boîte
+  // CanalRight : startX=0.7, startY=-(BOULIER_RADIUS+FUNNEL_HEIGHT+0.1)=-4.9
+  // endX=BOX_X-BOX_WIDTH/2=5.0, endY=BOX_Y=-6.5
+  // angle ≈ -20.4°, direction unitaire ≈ (0.937, -0.349)
+  // Normale vers le haut du canal ≈ (0.349, 0.937)
+  // Spawn = startX + normale*BALL_RADIUS → (0.812, -4.500), z=0
   const sendBallToRightBox = useCallback((ballNumber) => {
     const bd = ballRefs.current[ballNumber];
     if (!bd || !bd.rb) return;
@@ -96,20 +101,14 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
     bd.drawn = true;
 
     try {
-      bd.rb.setTranslation(
-        {
-          x: 0.7,
-          y: -BOULIER_RADIUS - FUNNEL_HEIGHT - 0.2,
-          z: (Math.random() - 0.5) * 0.2,
-        },
-        true,
-      );
+      // Spawn à l'entrée du canal — endY corrigé à -5.3, angle -9.25°
+      // direction canal : (0.987, -0.161), normale : (0.161, 0.987)
+      // spawn = start + normale*(BALL_RADIUS+0.05) = (0.759, -4.535)
+      bd.rb.setTranslation({ x: 0.76, y: -4.54, z: 0 }, true);
       bd.rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
       bd.rb.setAngvel({ x: 0, y: 0, z: 0 }, true);
-      bd.rb.applyImpulse(
-        { x: 1.5, y: -0.2, z: (Math.random() - 0.5) * 0.1 },
-        true,
-      );
+      // Impulsion alignée sur la direction du canal × 3.5
+      bd.rb.applyImpulse({ x: 3.45, y: -0.56, z: 0 }, true);
     } catch (e) {}
   }, []);
 
@@ -163,15 +162,26 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
     console.log("═══ PHASE 2 : Évacuation ═══");
     dispatch({ type: "START_CLEARING" });
 
+    // Canal long ≈ 4.6u, transit ~1.5s — envoyer par groupes de 5 avec pause
+    const BATCH_SIZE = 5;
+    const DELAY_IN_BATCH = 350; // ms entre chaque boule dans un groupe
+    const PAUSE_BETWEEN_BATCHES = 1800; // ms entre groupes — laisse le canal se vider
+
     for (let i = 0; i < evacuateBalls.length; i++) {
       sendBallToRightBox(evacuateBalls[i]);
+
       if ((i + 1) % 10 === 0) {
         dispatch({ type: "CLEARING_PROGRESS", count: i + 1 });
       }
-      await wait(80);
+
+      const isEndOfBatch = (i + 1) % BATCH_SIZE === 0;
+      const isLast = i === evacuateBalls.length - 1;
+      if (!isLast) {
+        await wait(isEndOfBatch ? PAUSE_BETWEEN_BATCHES : DELAY_IN_BATCH);
+      }
     }
 
-    await wait(3000);
+    await wait(4000); // laisser les dernières boules atteindre la boîte
 
     // Nettoyer tube gauche
     console.log("Nettoyage tube gauche");

@@ -6,8 +6,29 @@ export function ResponsiveCamera() {
 
   useEffect(() => {
     const aspect = size.width / size.height;
-    camera.fov = aspect < 1 ? 90 : 65;
-    camera.position.set(2, -1.5, 18);
+
+    if (aspect < 0.6) {
+      // ✅ Très petit mobile (portrait étroit)
+      camera.fov = 100;
+      camera.position.set(2, -1.5, 22);
+    } else if (aspect < 0.8) {
+      // ✅ Mobile portrait standard
+      camera.fov = 95;
+      camera.position.set(2, -1.5, 20);
+    } else if (aspect < 1) {
+      // ✅ Tablette portrait / grand mobile
+      camera.fov = 85;
+      camera.position.set(2, -1.5, 17);
+    } else if (aspect < 1.5) {
+      // ✅ Tablette paysage / petit desktop
+      camera.fov = 70;
+      camera.position.set(2, -1.5, 14);
+    } else {
+      // ✅ Desktop large
+      camera.fov = aspect < 1 ? 95 : 70;
+      camera.position.set(2, -1.5, 12);
+    }
+
     camera.lookAt(1.5, -3, 0);
     camera.updateProjectionMatrix();
   }, [camera, size]);

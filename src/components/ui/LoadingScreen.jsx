@@ -12,7 +12,7 @@ export function LoadingScreen() {
         <p className="text-4xl mb-4 animate-bounce">⏳</p>
         <p className="text-white text-lg">Chargement...</p>
         <p className="text-gray-500 text-xs mt-2">
-          Initialisation du moteur physique WASM
+          Bienvenue sur LOTO 3D, un jeu de loterie en 3D.
         </p>
       </div>
     </motion.div>

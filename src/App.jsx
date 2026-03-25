@@ -14,24 +14,40 @@ export default function App() {
   const [state, dispatch] = useReducer(drawReducer, initialState);
   const [isLoaded, setIsLoaded] = useState(false);
   const startDrawRef = useRef(null);
+  const audioHandlersRef = useRef({});
   const { playPloop, playVictory, initAudio } = useAudio();
+
+  // Stocker les handlers audio dans un ref stable
+  audioHandlersRef.current.playPloop = playPloop;
+  audioHandlersRef.current.playVictory = playVictory;
 
   const handleStartDraw = useCallback(() => {
     initAudio();
-    console.log("Button clicked, startDrawRef:", !!startDrawRef.current);
     if (startDrawRef.current) {
       startDrawRef.current();
     }
   }, [initAudio]);
 
+  const handleReset = useCallback(() => {
+    // Appeler le reset de la scène si disponible
+    if (audioHandlersRef.current.resetScene) {
+      audioHandlersRef.current.resetScene();
+    } else {
+      dispatch({ type: "RESET" });
+    }
+  }, [dispatch]);
+
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-black">
+    <div
+      className="h-screen overflow-hidden flex flex-col bg-black mx-auto"
+      style={{ maxWidth: "1300px" }}
+    >
       <AnimatePresence>{!isLoaded && <LoadingScreen />}</AnimatePresence>
 
       <div className="flex-1 relative min-h-0">
         <ErrorBoundary>
           <Canvas
-            camera={{ position: [2, -1.5, 18], fov: 65 }}
+            camera={{ position: [6, -4, 50], fov: 65 }}
             gl={{
               alpha: true,
               antialias: !IS_MOBILE,
@@ -43,7 +59,6 @@ export default function App() {
             dpr={[1, IS_MOBILE ? 1.5 : 2]}
             performance={{ min: 0.5 }}
             onCreated={() => {
-              console.log("Canvas created");
               setTimeout(() => setIsLoaded(true), 800);
             }}
           >
@@ -51,7 +66,7 @@ export default function App() {
               state={state}
               dispatch={dispatch}
               startDrawRef={startDrawRef}
-              audioHandlers={{ playPloop, playVictory }}
+              audioHandlers={audioHandlersRef.current}
             />
           </Canvas>
         </ErrorBoundary>
@@ -61,6 +76,7 @@ export default function App() {
         state={state}
         dispatch={dispatch}
         onStartDraw={handleStartDraw}
+        onReset={handleReset}
       />
     </div>
   );

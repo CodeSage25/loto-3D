@@ -2,6 +2,7 @@ export const IS_MOBILE =
   typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
 
 export const BOULIER_RADIUS = 4.0;
+export const BALL_RADIUS_DISPLAY = 1.44;
 export const BALL_RADIUS = 0.32;
 export const TOTAL_BALLS = 90;
 export const DRAW_DELAY = 1800;
@@ -26,7 +27,7 @@ export const CANAL_RIGHT_WIDTH = BALL_RADIUS * 3.5;
 // Boîte de collection droite
 export const BOX_X = 7.0;
 export const BOX_Y = -6.5;
-export const BOX_WIDTH = 4.0;
+export const BOX_WIDTH = 5.0;
 export const BOX_HEIGHT = 3.0;
 export const BOX_DEPTH = 2.5;
 

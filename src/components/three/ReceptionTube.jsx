@@ -131,13 +131,30 @@ export function ReceptionTube() {
         />
       </RigidBody>
 
-      {/* Bouchon gauche */}
+      {/* Bouchon gauche — cylindrique et foncé */}
       <RigidBody type="fixed" position={[tubeEndX - 0.04, tubeY, 0]}>
         <CuboidCollider
           args={[0.04, TUBE_RADIUS, TUBE_RADIUS]}
           restitution={0.2}
           friction={0.3}
         />
+
+        {/* ✅ Mesh cylindrique arrondi */}
+        <mesh rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry
+            args={[
+              TUBE_RADIUS, // rayon haut    — épouse le tube
+              TUBE_RADIUS, // rayon bas     — même diamètre
+              0.08, // épaisseur     — fin comme un bouchon
+              32, // segments      — lisse et arrondi
+            ]}
+          />
+          <meshStandardMaterial
+            color="#1a1a2e"
+            metalness={0.85}
+            roughness={0.15}
+          />
+        </mesh>
       </RigidBody>
     </group>
   );

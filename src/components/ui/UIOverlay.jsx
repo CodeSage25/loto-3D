@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Jeton } from "./Jeton";
 import { EmptySlot } from "./EmptySlot";
 
-export function UIOverlay({ state, dispatch, onStartDraw }) {
+export function UIOverlay({ state, dispatch, onStartDraw, onReset }) {
   const isActive = state.phase !== "IDLE" && state.phase !== "DONE";
 
   return (
@@ -32,10 +32,9 @@ export function UIOverlay({ state, dispatch, onStartDraw }) {
         </p>
       </div>
 
-      {/* Phase 1 : 8 boules */}
       <div className="flex flex-col items-center gap-1">
         <p className="text-xs text-gray-500 uppercase tracking-wider">
-          Phase 1 — 8 boules
+          8 PREMIERS NUMEROS TIRÉS
         </p>
         <div className="flex items-center justify-center gap-1.5 flex-wrap">
           {Array.from({ length: 5 }, (_, i) => (
@@ -64,10 +63,9 @@ export function UIOverlay({ state, dispatch, onStartDraw }) {
         </div>
       </div>
 
-      {/* Phase 3 : 5 boules finales */}
       <div className="flex flex-col items-center gap-1">
         <p className="text-xs text-gray-500 uppercase tracking-wider">
-          Phase Finale — 5 boules
+          5 DERNIERS NUMEROS TIRÉS
         </p>
         <div className="flex items-center justify-center gap-1.5">
           {Array.from({ length: 5 }, (_, i) => (
@@ -95,7 +93,7 @@ export function UIOverlay({ state, dispatch, onStartDraw }) {
           🎱 Lancer
         </button>
         <button
-          onClick={() => dispatch({ type: "RESET" })}
+          onClick={onReset}
           className="py-2.5 px-5 rounded-full font-semibold text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg"
         >
           🔄 Reset
