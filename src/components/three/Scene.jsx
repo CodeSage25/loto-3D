@@ -7,9 +7,11 @@ import {
   TOTAL_BALLS,
   DRAW_DELAY,
   BOULIER_RADIUS,
+  BALL_RADIUS,
   TUBE_LEFT_ENTRY_X,
   TUBE_LEFT_Y,
   TUBE_LENGTH,
+  TUBE_RADIUS,
   PHASE1_COUNT,
   PHASE3_COUNT,
   FUNNEL_HEIGHT,
@@ -30,11 +32,22 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
   const [gateOpen, setGateOpen] = useState(false);
   const isDrawing = useRef(false);
 
-  const { playPloop, playVictory } = audioHandlers;
+ const { playPloop, playWin } = audioHandlers;
 
-  const handleBallReady = useCallback((number, rb, meshRef) => {
-    ballRefs.current[number] = { rb, mesh: meshRef, drawn: false };
-  }, []);
+  const handleBallReady = useCallback(
+    (number, rb, meshRef, drawnRef, orientRef) => {
+      // drawnRef    : stoppe le brassage dans Ball.jsx quand true
+      // orientRef   : déclenche l'orientation numéro vers caméra (+Z) dans Ball.jsx
+      ballRefs.current[number] = {
+        rb,
+        mesh: meshRef,
+        drawn: false,
+        drawnRef,
+        orientRef,
+      };
+    },
+    [],
+  );
 
   const wait = useCallback(
     (ms) =>
@@ -45,7 +58,8 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
     [],
   );
 
-  // ✅ Téléportation directe dans le tube gauche — pas d'aspiration
+  // ✅ La boule roule physiquement dans le canal puis entre dans le tube
+  // Une fois stabilisée (~1.5s), on oriente le numéro vers la caméra (+Z)
   const sendBallToLeftTube = useCallback(
     async (ballNumber, slotIndex) => {
       const bd = ballRefs.current[ballNumber];
@@ -55,9 +69,10 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
       }
 
       bd.drawn = true;
+      if (bd.drawnRef) bd.drawnRef.current = true; // stoppe le brassage dans Ball.jsx
 
       try {
-        // Position d'entrée du tube
+        // Point d'entrée du canal gauche
         const entryX = TUBE_LEFT_ENTRY_X + 0.2;
         const entryY = TUBE_LEFT_Y + 0.3;
 
@@ -74,15 +89,12 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
         console.warn("Error sending ball to left tube:", e);
       }
 
-      // Attendre que la boule se place
-      await wait(600);
+      // Attendre que la boule roule et se stabilise dans le tube
+      await wait(1500);
 
-      // Boost si elle ralentit
+      // Puis orienter le numéro vers la caméra — Ball.jsx s'en charge via orientRef
       try {
-        const vel = bd.rb.linvel();
-        if (Math.abs(vel.x) < 0.5) {
-          bd.rb.applyImpulse({ x: -0.8, y: 0, z: 0 }, true);
-        }
+        if (bd.orientRef) bd.orientRef.current = true;
       } catch (e) {}
     },
     [playPloop, wait],
@@ -99,6 +111,7 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
     if (!bd || !bd.rb) return;
 
     bd.drawn = true;
+    if (bd.drawnRef) bd.drawnRef.current = true; // stoppe le brassage dans Ball.jsx
 
     try {
       // Spawn à l'entrée du canal — endY corrigé à -5.3, angle -9.25°
@@ -117,10 +130,12 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
       for (const num of ballNumbers) {
         const bd = ballRefs.current[num];
         if (bd?.mesh?.current) bd.mesh.current.visible = false;
+        if (bd?.drawnRef) bd.drawnRef.current = true; // stoppe le brassage
         if (bd?.rb) {
           try {
             bd.rb.setTranslation({ x: -30, y: -30, z: 0 }, true);
             bd.rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
+            bd.rb.setAngvel({ x: 0, y: 0, z: 0 }, true);
           } catch (e) {}
         }
         await wait(60);
@@ -139,16 +154,13 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
     const shuffled = fisherYatesShuffle(numbers);
 
     const phase1Balls = shuffled.slice(0, PHASE1_COUNT);
-    const phase3Balls = shuffled.slice(
-      PHASE1_COUNT,
-      PHASE1_COUNT + PHASE3_COUNT,
-    );
+    const phase3Balls = shuffled.slice(PHASE1_COUNT, PHASE1_COUNT + PHASE3_COUNT);
     const evacuateBalls = shuffled.slice(PHASE1_COUNT + PHASE3_COUNT);
 
     dispatch({ type: "START_DRAW", drawOrder: shuffled });
     setGateOpen(true);
 
-    // ═══ PHASE 1 : 8 boules → tube gauche ═══
+    // PHASE 1
     console.log("═══ PHASE 1 ═══");
     for (let i = 0; i < PHASE1_COUNT; i++) {
       await wait(DRAW_DELAY);
@@ -158,37 +170,34 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
 
     await wait(2000);
 
-    // ═══ PHASE 2 : 77 boules → boîte droite ═══
+    // PHASE 2 : Vidage des 77 boules
     console.log("═══ PHASE 2 : Évacuation ═══");
     dispatch({ type: "START_CLEARING" });
 
-    // Canal long ≈ 4.6u, transit ~1.5s — envoyer par groupes de 5 avec pause
     const BATCH_SIZE = 5;
-    const DELAY_IN_BATCH = 350; // ms entre chaque boule dans un groupe
-    const PAUSE_BETWEEN_BATCHES = 1800; // ms entre groupes — laisse le canal se vider
+    const DELAY_IN_BATCH = 180;
 
-    for (let i = 0; i < evacuateBalls.length; i++) {
-      sendBallToRightBox(evacuateBalls[i]);
+    // Remplace cette partie :
+for (let i = 0; i < evacuateBalls.length; i++) {
+  sendBallToRightBox(evacuateBalls[i]);
+  
+  
+  
+  if ((i + 1) % 10 === 0) {
+    dispatch({ type: "CLEARING_PROGRESS", count: i + 1 });
+  }
 
-      if ((i + 1) % 10 === 0) {
-        dispatch({ type: "CLEARING_PROGRESS", count: i + 1 });
-      }
+  const isLast = i === evacuateBalls.length - 1;
+  if (!isLast) {
+    await wait((i + 1) % BATCH_SIZE === 0 ? 120 : DELAY_IN_BATCH);
+  }
+}
 
-      const isEndOfBatch = (i + 1) % BATCH_SIZE === 0;
-      const isLast = i === evacuateBalls.length - 1;
-      if (!isLast) {
-        await wait(isEndOfBatch ? PAUSE_BETWEEN_BATCHES : DELAY_IN_BATCH);
-      }
-    }
-
-    await wait(4000); // laisser les dernières boules atteindre la boîte
-
-    // Nettoyer tube gauche
-    console.log("Nettoyage tube gauche");
+    await wait(3500);
     await clearLeftTube(phase1Balls);
-    await wait(500);
+    await wait(800);
 
-    // ═══ PHASE 3 : 5 boules → tube gauche ═══
+    // PHASE 3
     console.log("═══ PHASE 3 ═══");
     dispatch({ type: "START_PHASE3" });
 
@@ -198,7 +207,7 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
       dispatch({ type: "BALL_DRAWN_P3", ballNumber: phase3Balls[i] });
     }
 
-    playVictory();
+    playWin();                    // ← changé de playVictory à playWin
     dispatch({ type: "FINISH" });
     setGateOpen(false);
     isDrawing.current = false;
@@ -209,9 +218,8 @@ export function Scene({ state, dispatch, startDrawRef, audioHandlers }) {
     sendBallToLeftTube,
     sendBallToRightBox,
     clearLeftTube,
-    playVictory,
+    playWin,
   ]);
-
   useEffect(() => {
     startDrawRef.current = startDraw;
   }, [startDraw, startDrawRef]);

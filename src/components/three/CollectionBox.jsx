@@ -15,9 +15,10 @@ export function CollectionBox() {
     metalness: 0.05,
     thickness: 0.4,
     ior: 1.45,
-    transparent: true,
+    transparent: false,
     opacity: 0.3,
-    depthWrite: false,
+    
+    depthWrite: true,
     color: "#88aad0",
     envMapIntensity: 0.3,
     side: THREE.DoubleSide,
@@ -45,7 +46,7 @@ export function CollectionBox() {
 
       {/* Face droite */}
       <mesh position={[BOX_X + BOX_WIDTH / 2, BOX_Y, 0]} renderOrder={8}>
-        <boxGeometry args={[0.07, BOX_HEIGHT, BOX_DEPTH]} />
+        <boxGeometry args={[0.3, BOX_HEIGHT, BOX_DEPTH]} />
         <meshPhysicalMaterial {...glassMat} />
       </mesh>
 

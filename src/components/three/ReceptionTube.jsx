@@ -96,8 +96,8 @@ export function ReceptionTube() {
       >
         <CuboidCollider
           args={[TUBE_LENGTH / 2, 0.04, TUBE_RADIUS * 0.8]}
-          restitution={0.2}
-          friction={0.5}
+          restitution={0.0}
+          friction={2.0}
         />
       </RigidBody>
 
@@ -108,8 +108,8 @@ export function ReceptionTube() {
       >
         <CuboidCollider
           args={[TUBE_LENGTH / 2, 0.04, TUBE_RADIUS * 0.8]}
-          restitution={0.2}
-          friction={0.3}
+          restitution={0.0}
+          friction={1.5}
         />
       </RigidBody>
 
@@ -117,8 +117,8 @@ export function ReceptionTube() {
       <RigidBody type="fixed" position={[tubeCenterX, tubeY, -TUBE_RADIUS]}>
         <CuboidCollider
           args={[TUBE_LENGTH / 2, TUBE_RADIUS, 0.04]}
-          restitution={0.2}
-          friction={0.3}
+          restitution={0.0}
+          friction={1.5}
         />
       </RigidBody>
 
@@ -126,12 +126,12 @@ export function ReceptionTube() {
       <RigidBody type="fixed" position={[tubeCenterX, tubeY, TUBE_RADIUS]}>
         <CuboidCollider
           args={[TUBE_LENGTH / 2, TUBE_RADIUS, 0.04]}
-          restitution={0.2}
-          friction={0.3}
+          restitution={0.0}
+          friction={1.5}
         />
       </RigidBody>
 
-      {/* Bouchon gauche — cylindrique et foncé */}
+      {/* Bouchon gauche */}
       <RigidBody type="fixed" position={[tubeEndX - 0.04, tubeY, 0]}>
         <CuboidCollider
           args={[0.04, TUBE_RADIUS, TUBE_RADIUS]}

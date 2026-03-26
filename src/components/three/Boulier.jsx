@@ -109,145 +109,105 @@ export function Boulier({ phase }) {
       </mesh>
 
       <group ref={agitatorRef}>
-        {/* Hub central — boule chromée */}
-        <mesh renderOrder={5}>
-          <sphereGeometry args={[BOULIER_RADIUS * 0.035, 24, 24]} />
-          <meshStandardMaterial
-            color="#e8e8e8"
-            metalness={1}
-            roughness={0.02}
-            envMapIntensity={2.0}
-          />
-        </mesh>
-
-        {/* Axe vertical principal */}
-        <mesh renderOrder={5}>
+        {/* --- 1. MOYEU CENTRAL (CÔNE DE DÉFLEXION) --- */}
+        {/* Ce cône sert à pousser les boules vers l'extérieur, vers les pales */}
+        <mesh position={[0, -BOULIER_RADIUS * 0.1, 0]} renderOrder={5}>
           <cylinderGeometry
             args={[
-              BOULIER_RADIUS * 0.012,
-              BOULIER_RADIUS * 0.012,
-              BOULIER_RADIUS * 1.3,
-              12,
+              BOULIER_RADIUS * 0.08, // Rayon haut (plus fin)
+              BOULIER_RADIUS * 0.25, // Rayon bas (large base)
+              BOULIER_RADIUS * 0.3, // Hauteur
+              32, // Résolution lisse
             ]}
           />
           <meshStandardMaterial
-            color="#d0d0d0"
-            metalness={1}
-            roughness={0.05}
-            envMapIntensity={1.8}
+            color="#202020" // Plastique dur noir ou métal peint
+            metalness={0.6}
+            roughness={0.4}
+            envMapIntensity={1.5}
           />
         </mesh>
 
-        {/* Renforts annulaires sur l'axe */}
-        {[-0.3, 0, 0.3].map((yFrac, i) => (
-          <mesh
-            key={`ring-${i}`}
-            position={[0, BOULIER_RADIUS * yFrac, 0]}
-            rotation={[Math.PI / 2, 0, 0]}
-            renderOrder={5}
-          >
-            <torusGeometry
-              args={[BOULIER_RADIUS * 0.025, BOULIER_RADIUS * 0.006, 8, 16]}
-            />
-            <meshStandardMaterial
-              color="#c0c0c0"
-              metalness={1}
-              roughness={0.05}
-            />
-          </mesh>
-        ))}
+        {/* Capuchon chromé du moyeu (le boulon central) */}
+        <mesh position={[0, BOULIER_RADIUS * 0.06, 0]} renderOrder={5}>
+          <cylinderGeometry
+            args={[
+              BOULIER_RADIUS * 0.04,
+              BOULIER_RADIUS * 0.04,
+              BOULIER_RADIUS * 0.05,
+              16,
+            ]}
+          />
+          <meshStandardMaterial color="#ffffff" metalness={1} roughness={0.1} />
+        </mesh>
 
-        {/* 6 bras avec palettes */}
-        {armAngles.map((deg, i) => {
-          const radY = (deg * Math.PI) / 180;
-          const tiltX = ((i % 2 === 0 ? 1 : -1) * Math.PI) / 8;
-          const armLength = BOULIER_RADIUS * 0.58;
-          const armThick = BOULIER_RADIUS * 0.01;
-          const paddleW = BOULIER_RADIUS * 0.07;
-          const paddleH = BOULIER_RADIUS * 0.02;
-          const paddleD = BOULIER_RADIUS * 0.035;
+        {/* --- 2. LES PALES (PROPELLER) --- */}
+        {/* On utilise 3 pales à 120°, c'est plus efficace pour le chaos que 4 ou 6 */}
+        {[0, 120, 240].map((angle, i) => {
+          const rad = (angle * Math.PI) / 180;
+          const armLen = BOULIER_RADIUS * 0.65; // Longueur de la pale
 
           return (
-            <group key={`arm-${i}`} rotation={[tiltX, radY, 0]}>
-              {/* Tige du bras — cylindre fin chromé */}
-              <mesh renderOrder={5}>
-                <cylinderGeometry args={[armThick, armThick, armLength, 8]} />
+            <group key={`blade-${i}`} rotation={[0, rad, 0]}>
+              {/* A. La tige de support (Métal solide) */}
+              <mesh
+                position={[0, 0, armLen / 2]}
+                rotation={[Math.PI / 2, 0, 0]} // Couché horizontalement
+                renderOrder={5}
+              >
+                {/* Forme rectangulaire arrondie, pas un cylindre fin */}
+                <boxGeometry
+                  args={[BOULIER_RADIUS * 0.04, armLen, BOULIER_RADIUS * 0.02]}
+                />
                 <meshStandardMaterial
-                  color="#c8c8c8"
-                  metalness={1}
-                  roughness={0.08}
-                  envMapIntensity={1.5}
+                  color="#a0a0a0"
+                  metalness={0.9}
+                  roughness={0.2}
                 />
               </mesh>
 
-              {/* Palette supérieure — rectangle arrondi */}
-              <group position={[0, armLength / 2, 0]}>
+              {/* B. La Pale / La Cuillère (Partie active en bout) */}
+              {/* On crée un angle pour soulever les boules (effet "scoop") */}
+              <group
+                position={[0, 0, armLen]}
+                rotation={[Math.PI / 6, 0, -Math.PI / 12]}
+              >
+                {/* Le "Pad" en caoutchouc qui touche les boules */}
                 <mesh renderOrder={5}>
-                  <boxGeometry args={[paddleW, paddleH, paddleD]} />
+                  <boxGeometry
+                    args={[
+                      BOULIER_RADIUS * 0.18, // Largeur de la pale
+                      BOULIER_RADIUS * 0.08, // Hauteur
+                      BOULIER_RADIUS * 0.02, // Épaisseur fine
+                    ]}
+                  />
+                  {/* Matériau type silicone/caoutchouc rouge ou bleu (très "Loto") */}
                   <meshStandardMaterial
-                    color="#d8d8d8"
-                    metalness={0.95}
-                    roughness={0.1}
-                    envMapIntensity={1.2}
+                    color="#bf1a1a" // Rouge industriel (ou changez pour bleu/noir)
+                    metalness={0.1}
+                    roughness={0.8} // Aspect mat caoutchouc
                   />
                 </mesh>
-                {/* Arrondi aux extrémités */}
-                <mesh position={[paddleW / 2, 0, 0]} renderOrder={5}>
-                  <sphereGeometry args={[paddleH / 2, 8, 8]} />
-                  <meshStandardMaterial
-                    color="#d8d8d8"
-                    metalness={0.95}
-                    roughness={0.1}
+
+                {/* Renfort arrière de la pale (détail mécanique) */}
+                <mesh
+                  position={[0, 0, -BOULIER_RADIUS * 0.015]}
+                  renderOrder={5}
+                >
+                  <boxGeometry
+                    args={[
+                      BOULIER_RADIUS * 0.1,
+                      BOULIER_RADIUS * 0.04,
+                      BOULIER_RADIUS * 0.02,
+                    ]}
                   />
-                </mesh>
-                <mesh position={[-paddleW / 2, 0, 0]} renderOrder={5}>
-                  <sphereGeometry args={[paddleH / 2, 8, 8]} />
                   <meshStandardMaterial
-                    color="#d8d8d8"
-                    metalness={0.95}
-                    roughness={0.1}
+                    color="#505050"
+                    metalness={0.8}
+                    roughness={0.3}
                   />
                 </mesh>
               </group>
-
-              {/* Palette inférieure */}
-              <group position={[0, -armLength / 2, 0]}>
-                <mesh renderOrder={5}>
-                  <boxGeometry args={[paddleW, paddleH, paddleD]} />
-                  <meshStandardMaterial
-                    color="#d8d8d8"
-                    metalness={0.95}
-                    roughness={0.1}
-                    envMapIntensity={1.2}
-                  />
-                </mesh>
-                <mesh position={[paddleW / 2, 0, 0]} renderOrder={5}>
-                  <sphereGeometry args={[paddleH / 2, 8, 8]} />
-                  <meshStandardMaterial
-                    color="#d8d8d8"
-                    metalness={0.95}
-                    roughness={0.1}
-                  />
-                </mesh>
-                <mesh position={[-paddleW / 2, 0, 0]} renderOrder={5}>
-                  <sphereGeometry args={[paddleH / 2, 8, 8]} />
-                  <meshStandardMaterial
-                    color="#d8d8d8"
-                    metalness={0.95}
-                    roughness={0.1}
-                  />
-                </mesh>
-              </group>
-
-              {/* Jonction bras-hub */}
-              <mesh position={[0, 0, 0]} renderOrder={5}>
-                <sphereGeometry args={[armThick * 1.5, 8, 8]} />
-                <meshStandardMaterial
-                  color="#d0d0d0"
-                  metalness={1}
-                  roughness={0.05}
-                />
-              </mesh>
             </group>
           );
         })}

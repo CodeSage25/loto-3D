@@ -14,27 +14,18 @@ export default function App() {
   const [state, dispatch] = useReducer(drawReducer, initialState);
   const [isLoaded, setIsLoaded] = useState(false);
   const startDrawRef = useRef(null);
-  const audioHandlersRef = useRef({});
-  const { playPloop, playVictory, initAudio } = useAudio();
 
-  // Stocker les handlers audio dans un ref stable
-  audioHandlersRef.current.playPloop = playPloop;
-  audioHandlersRef.current.playVictory = playVictory;
+  const audio = useAudio();
 
   const handleStartDraw = useCallback(() => {
-    initAudio();
+    audio.initAudio();
     if (startDrawRef.current) {
       startDrawRef.current();
     }
-  }, [initAudio]);
+  }, [audio]);
 
   const handleReset = useCallback(() => {
-    // Appeler le reset de la scène si disponible
-    if (audioHandlersRef.current.resetScene) {
-      audioHandlersRef.current.resetScene();
-    } else {
-      dispatch({ type: "RESET" });
-    }
+    dispatch({ type: "RESET" });
   }, [dispatch]);
 
   return (
@@ -58,15 +49,13 @@ export default function App() {
             shadows={false}
             dpr={[1, IS_MOBILE ? 1.5 : 2]}
             performance={{ min: 0.5 }}
-            onCreated={() => {
-              setTimeout(() => setIsLoaded(true), 800);
-            }}
+            onCreated={() => setTimeout(() => setIsLoaded(true), 800)}
           >
             <Scene
               state={state}
               dispatch={dispatch}
               startDrawRef={startDrawRef}
-              audioHandlers={audioHandlersRef.current}
+              audioHandlers={audio}
             />
           </Canvas>
         </ErrorBoundary>
@@ -74,9 +63,10 @@ export default function App() {
 
       <UIOverlay
         state={state}
-        dispatch={dispatch}
         onStartDraw={handleStartDraw}
         onReset={handleReset}
+        isMuted={audio.isMuted}
+        toggleMute={audio.toggleMute}
       />
     </div>
   );

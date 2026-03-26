@@ -3,7 +3,8 @@ export const IS_MOBILE =
 
 export const BOULIER_RADIUS = 4.0;
 export const BALL_RADIUS_DISPLAY = 1.44;
-export const BALL_RADIUS = 0.32;
+// Dans constants.js
+export const BALL_RADIUS = 0.4; // Au lieu de 0.5
 export const TOTAL_BALLS = 90;
 export const DRAW_DELAY = 1800;
 
@@ -18,8 +19,8 @@ export const TUBE_LEFT_ENTRY_X = -1.8; // Point d'entrée droite du tube
 export const TUBE_LEFT_Y = -7.0;
 
 // Canal gauche — doit être assez large pour une boule
-export const CANAL_WIDTH = BALL_RADIUS * 3.5; // Largeur interne du canal
-export const CANAL_DEPTH = BALL_RADIUS * 3.5; // Profondeur Z du canal
+export const CANAL_WIDTH = BALL_RADIUS * 3; // Largeur interne du canal
+export const CANAL_DEPTH = BALL_RADIUS * 3; // Profondeur Z du canal
 
 // Canal droit — idem
 export const CANAL_RIGHT_WIDTH = BALL_RADIUS * 3.5;
@@ -27,9 +28,9 @@ export const CANAL_RIGHT_WIDTH = BALL_RADIUS * 3.5;
 // Boîte de collection droite
 export const BOX_X = 7.0;
 export const BOX_Y = -6.5;
-export const BOX_WIDTH = 5.0;
+export const BOX_WIDTH = 7.0;
 export const BOX_HEIGHT = 3.0;
-export const BOX_DEPTH = 2.5;
+export const BOX_DEPTH = 3.5;
 
 // Entonnoirs sous le boulier
 export const FUNNEL_TOP_RADIUS = BALL_RADIUS * 3;

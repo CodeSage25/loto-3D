@@ -8,18 +8,18 @@ export function Ball({ number, index, phase, onBallReady }) {
   const rigidBodyRef = useRef();
   const meshRef = useRef();
   const frameCount = useRef(0);
-  const drawnRef = useRef(false);
+  const isDrawn = useRef(false);
 
   const texture = useMemo(() => createBallTexture(number), [number]);
 
   const initialPosition = useMemo(() => {
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
-    const r = 1.0 + Math.random() * (BOULIER_RADIUS * 0.3);
+    const r = 0.5 + Math.random() * (BOULIER_RADIUS * 1);
     return [
       r * Math.sin(phi) * Math.cos(theta),
-      r * Math.sin(phi) * Math.sin(theta) * 0.5,
-      r * Math.cos(phi) * 0.3,
+      r * Math.sin(phi) * Math.sin(theta) * 0.6,
+      r * Math.cos(phi) * 0.5,
     ];
   }, []);
 
@@ -27,137 +27,121 @@ export function Ball({ number, index, phase, onBallReady }) {
     (api) => {
       rigidBodyRef.current = api;
       if (api) {
-        const angle = Math.random() * Math.PI * 2;
-        const upForce = 0.5 + Math.random() * 0.8;
+        const angle = index * ((Math.PI * 2) / TOTAL_BALLS);
         api.applyImpulse(
           {
-            x: Math.cos(angle) * 0.6,
-            y: upForce,
-            z: Math.sin(angle) * 0.4,
+            x: Math.cos(angle) * 0.4,
+            y: Math.sin(angle * 0.7) * 0.3 + 0.2,
+            z: Math.sin(angle) * 0.2,
           },
           true,
         );
-
-        api.applyTorqueImpulse(
-          {
-            x: (Math.random() - 0.5) * 1.0,
-            y: (Math.random() - 0.5) * 1.0,
-            z: (Math.random() - 0.5) * 1.0,
-          },
-          true,
-        );
-
-        if (onBallReady) onBallReady(number, api, meshRef, drawnRef);
+        if (onBallReady) onBallReady(number, api, meshRef, isDrawn);
       }
     },
     [index, number, onBallReady],
   );
 
-  useFrame(() => {
-    const rb = rigidBodyRef.current;
-    if (!rb) return;
+useFrame(() => {
+  const rb = rigidBodyRef.current;
+  if (!rb) return;
 
-    // ═══ Si la boule est tirée : stopper toute rotation et mouvement ═══
-    if (drawnRef.current) {
-      try {
-        // Arrêter la rotation angulaire
-        const angvel = rb.angvel();
-        const angSpeed = Math.sqrt(
-          angvel.x * angvel.x + angvel.y * angvel.y + angvel.z * angvel.z,
-        );
-        if (angSpeed > 0.1) {
-          rb.setAngvel(
-            {
-              x: angvel.x * 0.85,
-              y: angvel.y * 0.85,
-              z: angvel.z * 0.85,
-            },
-            true,
-          );
-        } else if (angSpeed > 0.01) {
-          rb.setAngvel({ x: 0, y: 0, z: 0 }, true);
-        }
-      } catch (e) {}
-      return; // Ne pas appliquer de brassage
+  if (isDrawn.current) return;
+
+  const pos = rb.translation();
+  if (pos.y < -12) {
+    if (meshRef.current) meshRef.current.visible = false;
+    return;
+  }
+
+  frameCount.current++;
+
+  if (
+    phase === "IDLE" ||
+    phase === "DRAWING_PHASE1" ||
+    phase === "DRAWING_PHASE3"
+  ) {
+    const t = Date.now() * 0.001;
+    const dist = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
+    const tooFar = dist > BOULIER_RADIUS * 1;
+
+    // ═══ RAPPEL VERS LE CENTRE si trop près des parois ═══
+    if (tooFar) {
+      const nx = pos.x / (dist || 1);
+      const ny = pos.y / (dist || 1);
+      const nz = pos.z / (dist || 1);
+      rb.applyImpulse(
+        {
+          x: -nx * 0.4,
+          y: -ny * 0.4,
+          z: -nz * 0.4,
+        },
+        true,
+      );
+      return; // pas d'autre impulsion ce frame
     }
 
-    try {
-      const pos = rb.translation();
-      if (pos.y < -40) {
-        if (meshRef.current) meshRef.current.visible = false;
-        return;
-      }
-    } catch (e) {
-      return;
+    // ═══ IMPULSION DISCONTINUE ═══
+    // Chaque boule a son propre timer aléatoire
+    // On n'applique une impulsion que tous les N frames (variable)
+    const interval = 3 + Math.floor((index % 7)); // entre 3 et 9 frames
+    if (frameCount.current % interval !== 0) return;
+
+    // Direction totalement aléatoire à chaque déclenchement
+    const randX = (Math.random() - 0.5) * 2;
+    const randY = (Math.random() - 0.5) * 2;
+    const randZ = (Math.random() - 0.5) * 2;
+
+    // Normaliser la direction
+    const len = Math.sqrt(randX * randX + randY * randY + randZ * randZ) || 1;
+
+    // Force de base + variation temporelle par boule
+    const strength = 0.18 + Math.sin(t * 2.5 + index * 0.8) * 1;
+
+    rb.applyImpulse(
+      {
+        x: (randX / len) * strength,
+        y: (randY / len) * strength + 0.05, // légère poussée vers le haut
+        z: (randZ / len) * strength,
+      },
+      true,
+    );
+
+    // ═══ ROTATION ALÉATOIRE SUR ELLE-MÊME ═══
+    rb.applyTorqueImpulse(
+      {
+        x: (Math.random() - 0.5) * 0.06,
+        y: (Math.random() - 0.5) * 0.06,
+        z: (Math.random() - 0.5) * 0.05,
+      },
+      true,
+    );
+
+    // ═══ LIMITER VITESSE LINEAIRE ═══
+    const vel = rb.linvel();
+    const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
+    if (speed > 12) {
+      const scale = 12 / speed;
+      rb.setLinvel(
+        { x: vel.x * scale, y: vel.y * scale, z: vel.z * scale },
+        true,
+      );
     }
 
-    frameCount.current++;
-    if (frameCount.current % 4 !== 0) return;
-
-    if (
-      phase === "IDLE" ||
-      phase === "DRAWING_PHASE1" ||
-      phase === "DRAWING_PHASE3"
-    ) {
-      try {
-        const t = Date.now() * 0.001;
-        const freq1 = 0.8 + (index % 7) * 0.15;
-        const freq2 = 1.2 + (index % 5) * 0.2;
-        const freq3 = 0.6 + (index % 9) * 0.1;
-        const uniqueAngle = t * freq1 + index * ((Math.PI * 2) / TOTAL_BALLS);
-        const impulseStrength = 0.06;
-
-        rb.applyImpulse(
-          {
-            x:
-              Math.cos(uniqueAngle) * impulseStrength +
-              Math.sin(t * freq2 + index) * impulseStrength * 0.5 +
-              (Math.random() - 0.5) * 0.02,
-            y:
-              Math.sin(uniqueAngle * 0.7) * impulseStrength * 1.2 +
-              Math.cos(t * freq3) * impulseStrength * 0.8 +
-              (Math.random() - 0.5) * 0.02,
-            z:
-              Math.sin(uniqueAngle * 1.3 + t * 0.5) * impulseStrength * 0.6 +
-              (Math.random() - 0.5) * 0.015,
-          },
-          true,
-        );
-
-        if (frameCount.current % 8 === 0) {
-          rb.applyTorqueImpulse(
-            {
-              x: (Math.random() - 0.5) * 0.15,
-              y: (Math.random() - 0.5) * 0.15,
-              z: (Math.random() - 0.5) * 0.15,
-            },
-            true,
-          );
-        }
-
-        if (frameCount.current % 60 === 0 && Math.random() > 0.6) {
-          rb.applyImpulse(
-            {
-              x: (Math.random() - 0.5) * 0.3,
-              y: Math.random() * 0.4,
-              z: (Math.random() - 0.5) * 0.2,
-            },
-            true,
-          );
-        }
-
-        const vel = rb.linvel();
-        const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
-        if (speed > 10) {
-          const scale = 10 / speed;
-          rb.setLinvel(
-            { x: vel.x * scale, y: vel.y * scale, z: vel.z * scale },
-            true,
-          );
-        }
-      } catch (e) {}
+    // ═══ LIMITER VITESSE ANGULAIRE ═══
+    const angvel = rb.angvel();
+    const angSpeed = Math.sqrt(
+      angvel.x * angvel.x + angvel.y * angvel.y + angvel.z * angvel.z
+    );
+    if (angSpeed > 15) {
+      const scale = 15 / angSpeed;
+      rb.setAngvel(
+        { x: angvel.x * scale, y: angvel.y * scale, z: angvel.z * scale },
+        true,
+      );
     }
-  });
+  }
+});
 
   useEffect(() => {
     return () => {
@@ -170,20 +154,20 @@ export function Ball({ number, index, phase, onBallReady }) {
       ref={handleRef}
       position={initialPosition}
       colliders={false}
-      restitution={0.6}
-      friction={0.15}
-      linearDamping={0.2}
-      angularDamping={0.08}
+      restitution={0.5}
+      friction={0.2}
+      linearDamping={0.4}
+      angularDamping={0.3}
       type="dynamic"
     >
       <BallCollider args={[BALL_RADIUS]} />
       <mesh ref={meshRef} renderOrder={0}>
-        <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
+        <sphereGeometry args={[BALL_RADIUS, 28, 28]} />
         <meshStandardMaterial
           map={texture}
-          roughness={0.3}
-          metalness={0.1}
-          envMapIntensity={0.5}
+          roughness={1}
+          metalness={1}
+          envMapIntensity={0.3}
         />
       </mesh>
     </RigidBody>
