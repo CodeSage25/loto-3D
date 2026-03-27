@@ -3,8 +3,7 @@ export const IS_MOBILE =
 
 export const BOULIER_RADIUS = 4.0;
 export const BALL_RADIUS_DISPLAY = 1.44;
-// Dans constants.js
-export const BALL_RADIUS = 0.4; // Au lieu de 0.5
+export const BALL_RADIUS = 0.4;
 export const TOTAL_BALLS = 90;
 export const DRAW_DELAY = 1800;
 
@@ -12,17 +11,24 @@ export const PHASE1_COUNT = 8;
 export const PHASE2_EVACUATE = 77;
 export const PHASE3_COUNT = 5;
 
-// Tube de réception gauche — proportionnel aux boules
-export const TUBE_RADIUS = 0.55; // > BALL_RADIUS * 2 pour que la boule passe
+// Tube de réception gauche 1 (Phase 1 — 8 boules)
+export const TUBE_RADIUS = 0.55;
 export const TUBE_LENGTH = 7.0;
-export const TUBE_LEFT_ENTRY_X = -1.8; // Point d'entrée droite du tube
+export const TUBE_LEFT_ENTRY_X = -1.8;
 export const TUBE_LEFT_Y = -7.0;
 
-// Canal gauche — doit être assez large pour une boule
-export const CANAL_WIDTH = BALL_RADIUS * 3; // Largeur interne du canal
-export const CANAL_DEPTH = BALL_RADIUS * 3; // Profondeur Z du canal
+// ═══ Tube de réception gauche 2 (Phase 3 — 5 boules) ═══
+export const TUBE2_LENGTH = 7.0;
+export const TUBE2_RADIUS = 0.55;
+export const TUBE2_VERTICAL_GAP = 1.8;
+export const TUBE2_ENTRY_X = TUBE_LEFT_ENTRY_X; // ✅ Même X d'entrée que le tube 1
+export const TUBE2_Y = TUBE_LEFT_Y - TUBE2_VERTICAL_GAP; // En dessous du tube 1
 
-// Canal droit — idem
+// Canal gauche
+export const CANAL_WIDTH = BALL_RADIUS * 3;
+export const CANAL_DEPTH = BALL_RADIUS * 3;
+
+// Canal droit
 export const CANAL_RIGHT_WIDTH = BALL_RADIUS * 3.5;
 
 // Boîte de collection droite

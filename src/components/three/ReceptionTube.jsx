@@ -5,13 +5,16 @@ import {
   TUBE_LEFT_Y,
   TUBE_LENGTH,
   TUBE_RADIUS,
+  TUBE2_ENTRY_X,
+  TUBE2_Y,
+  TUBE2_LENGTH,
+  TUBE2_RADIUS,
 } from "../../constants";
 
-export function ReceptionTube() {
-  const tubeStartX = TUBE_LEFT_ENTRY_X;
-  const tubeEndX = tubeStartX - TUBE_LENGTH;
+function SingleTube({ entryX, tubeY, tubeLength, tubeRadius, label = "" }) {
+  const tubeStartX = entryX;
+  const tubeEndX = tubeStartX - tubeLength;
   const tubeCenterX = (tubeStartX + tubeEndX) / 2;
-  const tubeY = TUBE_LEFT_Y;
 
   const glassMat = {
     transmission: 0.75,
@@ -36,7 +39,7 @@ export function ReceptionTube() {
         renderOrder={9}
       >
         <cylinderGeometry
-          args={[TUBE_RADIUS, TUBE_RADIUS, TUBE_LENGTH, 32, 1, true]}
+          args={[tubeRadius, tubeRadius, tubeLength, 32, 1, true]}
         />
         <meshPhysicalMaterial {...glassMat} />
       </mesh>
@@ -47,7 +50,7 @@ export function ReceptionTube() {
         rotation={[0, Math.PI / 2, 0]}
         renderOrder={9}
       >
-        <circleGeometry args={[TUBE_RADIUS, 32]} />
+        <circleGeometry args={[tubeRadius, 32]} />
         <meshPhysicalMaterial {...glassMat} opacity={0.5} />
       </mesh>
 
@@ -57,18 +60,18 @@ export function ReceptionTube() {
         rotation={[0, -Math.PI / 2, 0]}
         renderOrder={9}
       >
-        <ringGeometry args={[TUBE_RADIUS - 0.12, TUBE_RADIUS, 32]} />
+        <ringGeometry args={[tubeRadius - 0.12, tubeRadius, 32]} />
         <meshPhysicalMaterial {...glassMat} />
       </mesh>
 
       {/* Supports */}
       {[
-        tubeCenterX - TUBE_LENGTH * 0.3,
+        tubeCenterX - tubeLength * 0.3,
         tubeCenterX,
-        tubeCenterX + TUBE_LENGTH * 0.3,
+        tubeCenterX + tubeLength * 0.3,
       ].map((x, i) => (
-        <group key={`tube-support-${i}`}>
-          <mesh position={[x, tubeY - TUBE_RADIUS - 0.5, 0]} renderOrder={3}>
+        <group key={`${label}-support-${i}`}>
+          <mesh position={[x, tubeY - tubeRadius - 0.5, 0]} renderOrder={3}>
             <boxGeometry args={[0.1, 1.0, 0.1]} />
             <meshStandardMaterial
               color="#777"
@@ -76,7 +79,7 @@ export function ReceptionTube() {
               roughness={0.1}
             />
           </mesh>
-          <mesh position={[x, tubeY - TUBE_RADIUS - 1.0, 0]} renderOrder={3}>
+          <mesh position={[x, tubeY - tubeRadius - 1.0, 0]} renderOrder={3}>
             <boxGeometry args={[0.45, 0.06, 0.45]} />
             <meshStandardMaterial
               color="#666"
@@ -89,43 +92,43 @@ export function ReceptionTube() {
 
       {/* ===== COLLIDERS ===== */}
 
-      {/* Fond du tube */}
+      {/* Fond */}
       <RigidBody
         type="fixed"
-        position={[tubeCenterX, tubeY - TUBE_RADIUS + 0.04, 0]}
+        position={[tubeCenterX, tubeY - tubeRadius + 0.04, 0]}
       >
         <CuboidCollider
-          args={[TUBE_LENGTH / 2, 0.04, TUBE_RADIUS * 0.8]}
+          args={[tubeLength / 2, 0.04, tubeRadius * 0.8]}
           restitution={0.0}
           friction={2.0}
         />
       </RigidBody>
 
-      {/* Plafond du tube */}
+      {/* Plafond */}
       <RigidBody
         type="fixed"
-        position={[tubeCenterX, tubeY + TUBE_RADIUS - 0.04, 0]}
+        position={[tubeCenterX, tubeY + tubeRadius - 0.04, 0]}
       >
         <CuboidCollider
-          args={[TUBE_LENGTH / 2, 0.04, TUBE_RADIUS * 0.8]}
+          args={[tubeLength / 2, 0.04, tubeRadius * 0.8]}
           restitution={0.0}
           friction={1.5}
         />
       </RigidBody>
 
-      {/* Paroi arrière Z- */}
-      <RigidBody type="fixed" position={[tubeCenterX, tubeY, -TUBE_RADIUS]}>
+      {/* Paroi Z- */}
+      <RigidBody type="fixed" position={[tubeCenterX, tubeY, -tubeRadius]}>
         <CuboidCollider
-          args={[TUBE_LENGTH / 2, TUBE_RADIUS, 0.04]}
+          args={[tubeLength / 2, tubeRadius, 0.04]}
           restitution={0.0}
           friction={1.5}
         />
       </RigidBody>
 
-      {/* Paroi avant Z+ */}
-      <RigidBody type="fixed" position={[tubeCenterX, tubeY, TUBE_RADIUS]}>
+      {/* Paroi Z+ */}
+      <RigidBody type="fixed" position={[tubeCenterX, tubeY, tubeRadius]}>
         <CuboidCollider
-          args={[TUBE_LENGTH / 2, TUBE_RADIUS, 0.04]}
+          args={[tubeLength / 2, tubeRadius, 0.04]}
           restitution={0.0}
           friction={1.5}
         />
@@ -134,21 +137,12 @@ export function ReceptionTube() {
       {/* Bouchon gauche */}
       <RigidBody type="fixed" position={[tubeEndX - 0.04, tubeY, 0]}>
         <CuboidCollider
-          args={[0.04, TUBE_RADIUS, TUBE_RADIUS]}
+          args={[0.04, tubeRadius, tubeRadius]}
           restitution={0.2}
           friction={0.3}
         />
-
-        {/* ✅ Mesh cylindrique arrondi */}
         <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry
-            args={[
-              TUBE_RADIUS, // rayon haut    — épouse le tube
-              TUBE_RADIUS, // rayon bas     — même diamètre
-              0.08, // épaisseur     — fin comme un bouchon
-              32, // segments      — lisse et arrondi
-            ]}
-          />
+          <cylinderGeometry args={[tubeRadius, tubeRadius, 0.08, 32]} />
           <meshStandardMaterial
             color="#1a1a2e"
             metalness={0.85}
@@ -156,6 +150,30 @@ export function ReceptionTube() {
           />
         </mesh>
       </RigidBody>
+    </group>
+  );
+}
+
+export function ReceptionTube() {
+  return (
+    <group>
+      {/* Tube 1 : Phase 1 — 8 boules */}
+      <SingleTube
+        entryX={TUBE_LEFT_ENTRY_X}
+        tubeY={TUBE_LEFT_Y}
+        tubeLength={TUBE_LENGTH}
+        tubeRadius={TUBE_RADIUS}
+        label="tube1"
+      />
+
+      {/* Tube 2 : Phase 3 — 5 boules (aligné en dessous) */}
+      <SingleTube
+        entryX={TUBE2_ENTRY_X}
+        tubeY={TUBE2_Y}
+        tubeLength={TUBE2_LENGTH}
+        tubeRadius={TUBE2_RADIUS}
+        label="tube2"
+      />
     </group>
   );
 }
